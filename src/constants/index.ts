@@ -1,4 +1,5 @@
 import { GraduationCap, School } from "lucide-react";
+import { z } from "zod";
 
 export const USER_ROLES = {
   STUDENT: "student",
@@ -55,15 +56,46 @@ export const ALLOWED_TYPES = [
   "image/webp",
 ];
 
-export const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_CLOUDINARY_UPLOAD_URL;
-export const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-export const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+const getEnvVar = (key: string): string => {
+  const value = import.meta.env[key];
 
-export const BASE_URL = import.meta.env.VITE_API_URL;
-export const ACCESS_TOKEN_KEY = import.meta.env.VITE_ACCESS_TOKEN_KEY;
-export const REFRESH_TOKEN_KEY = import.meta.env.VITE_REFRESH_TOKEN_KEY;
+  // explicitly check undefined or empty
+  if (value === undefined || value === "") {
+    throw new Error(`Missing environment variable: ${key}`);
+  }
+
+  return value;
+};
+
+/* ---------- helpers (optional strict validation) ---------- */
+
+const getUrlEnv = (key: string): string => {
+  const value = getEnvVar(key);
+
+  try {
+    new URL(value);
+  } catch {
+    throw new Error(`Invalid URL in environment variable: ${key}`);
+  }
+
+  return value;
+};
+
+/* ---------- exports ---------- */
+
+export const CLOUDINARY_UPLOAD_URL = getUrlEnv("VITE_CLOUDINARY_UPLOAD_URL");
+
+export const CLOUDINARY_CLOUD_NAME = getEnvVar("VITE_CLOUDINARY_CLOUD_NAME");
+
+export const BACKEND_BASE_URL = getUrlEnv("VITE_BACKEND_BASE_URL");
+
+export const BASE_URL = getUrlEnv("VITE_API_URL");
+
+export const ACCESS_TOKEN_KEY = import.meta.env.VITE_ACCESS_TOKEN_KEY
+
+export const REFRESH_TOKEN_KEY = import.meta.env.VITE_REFRESH_TOKEN_KEY
 
 export const REFRESH_TOKEN_URL = `${BASE_URL}/refresh-token`;
 
-export const CLOUDINARY_UPLOAD_PRESET = import.meta.env
-  .VITE_CLOUDINARY_UPLOAD_PRESET;
+export const CLOUDINARY_UPLOAD_PRESET =
+  getEnvVar("VITE_CLOUDINARY_UPLOAD_PRESET");
