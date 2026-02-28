@@ -62,10 +62,11 @@ const ClassesCreate = () => {
         shouldTouch: true,
       })
     }else{
-      field.onChange("bannerCldPubId",',{' +{
-        shouldValidate: true,
-        shouldTouch: true,
-      });
+      field.onChange("");
+            form.setValue('bannerCldPubId', '', {
+              shouldValidate: true,
+              shouldTouch: true,
+            });
 
     }
   }
@@ -141,13 +142,13 @@ const ClassesCreate = () => {
                         Banner Image <span className="text-orange-600">*</span>
                       </FormLabel>
                       <FormControl>
-                        <UploadWidget value = {field.value? {url:field.value,publicId: bannerPublicId?? ''}: null} onChange={(file:any,field:any)=> setBannerImage(file,field)}/>
+                        <UploadWidget value = {field.value? {url:field.value,publicId: bannerPublicId?? ''}: null} onChange={(file:any)=> setBannerImage(file,field)}/>
                       </FormControl>
                       <FormMessage />
                       {errors.bannerCldPubId && !errors.bannerUrl && (
                         <p className="text-destructive text-sm">
                           {errors.bannerCldPubId && !errors.bannerUrl && (
-                            <p className='text-destructive text-sm'>{errors.bannerCldPubId.message.toString()}</p>
+                            <p className='text-destructive text-sm'>{errors.bannerCldPubId.message}</p>
                           )}
 
 
