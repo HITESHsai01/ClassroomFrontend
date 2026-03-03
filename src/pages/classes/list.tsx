@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { useTable } from "@refinedev/react-table";
 import { useList } from "@refinedev/core";
-import { useDebounce } from "use-debounce";
 
 import {
   Select,
@@ -40,7 +39,6 @@ const ClassesList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedTeacher, setSelectedTeacher] = useState<string>("all");
-  const [debouncedSearch] = useDebounce(searchQuery, 400);
 
   const classColumns = useMemo<ColumnDef<ClassListItem>[]>(
     () => [
@@ -152,9 +150,6 @@ const ClassesList = () => {
     pagination: {
       pageSize: 100,
     },
-    queryOptions: {
-      staleTime: 5 * 60 * 1000, // 5 minutes — won't refetch unless stale
-    },
   });
 
   const { query: teachersQuery } = useList<User>({
@@ -169,32 +164,42 @@ const ClassesList = () => {
     pagination: {
       pageSize: 100,
     },
-    queryOptions: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
   });
 
-  const subjects = subjectsQuery.data?.data ?? [];
-  const teachers = teachersQuery.data?.data ?? [];
+  const subjects = subjectsQuery.data?.data || [];
+  const teachers = teachersQuery.data?.data || [];
 
-  // ✅ Memoize filters so the array reference only changes when values actually change
-  const permanentFilters = useMemo(() => {
-    const filters = [];
+  const subjectFilters =
+    selectedSubject === "all"
+      ? []
+      : [
+        {
+          field: "subject",
+          operator: "eq" as const,
+          value: selectedSubject,
+        },
+      ];
 
-    if (selectedSubject !== "all") {
-      filters.push({ field: "subject", operator: "eq" as const, value: selectedSubject });
-    }
+  const teacherFilters =
+    selectedTeacher === "all"
+      ? []
+      : [
+        {
+          field: "teacher",
+          operator: "eq" as const,
+          value: selectedTeacher,
+        },
+      ];
 
-    if (selectedTeacher !== "all") {
-      filters.push({ field: "teacher", operator: "eq" as const, value: selectedTeacher });
-    }
-
-    if (debouncedSearch) {
-      filters.push({ field: "name", operator: "contains" as const, value: debouncedSearch });
-    }
-
-    return filters;
-  }, [selectedSubject, selectedTeacher, debouncedSearch]);
+  const searchFilters = searchQuery
+    ? [
+      {
+        field: "name",
+        operator: "contains" as const,
+        value: searchQuery,
+      },
+    ]
+    : [];
 
   const classesTable = useTable<ClassListItem>({
     columns: classColumns,
@@ -206,7 +211,7 @@ const ClassesList = () => {
       },
       filters: {
         // Compose refine filters from the current UI selections.
-        permanent: permanentFilters,
+        permanent: [...subjectFilters, ...teacherFilters, ...searchFilters],
       },
       sorters: {
         initial: [
