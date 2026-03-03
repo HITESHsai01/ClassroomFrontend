@@ -46,26 +46,20 @@ const EnrollmentsJoin = () => {
   const onSubmit = async (values: JoinFormValues) => {
     if (!currentUser?.id) return;
 
-    try {
-          const response = await joinEnrollment({
-              resource: "enrollments/join",
-              values: {
-                inviteCode: values.inviteCode,
-                  studentId: currentUser.id,
-              },
-          });
+    const response = await joinEnrollment({
+      resource: "enrollments/join",
+      values: {
+        inviteCode: values.inviteCode,
+        studentId: currentUser.id,
+      },
+    });
 
-            navigate("/enrollments/confirm", {
-                state: {
-                enrollment: response?.data,
-                },
-          });
-        } catch {
-          form.setError("inviteCode", {
-              type: "server",
-              message: "Unable to join with that invite code. Please try again.",
-          });
-        }
+    navigate("/enrollments/confirm", {
+      state: {
+        enrollment: response?.data,
+      },
+    });
+  };
 
   const isSubmitDisabled = isPending || !currentUser?.id || !inviteCode;
 
