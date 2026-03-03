@@ -181,7 +181,7 @@ const ClassesShow = () => {
               <p>👨‍🏫 Instructor</p>
               <div>
                 <img
-                  src={classDetails.teacher?.image ?? placeholderUrl}
+                  src={classDetails.teacher?.image || placeholderUrl}
                   alt={teacherName}
                 />
 
