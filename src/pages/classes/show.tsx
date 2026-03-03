@@ -83,7 +83,7 @@ const ClassesShow = () => {
   const studentsTable = useTable<ClassUser>({
     columns: studentColumns,
     refineCoreProps: {
-      resource: `classes/${classId}/users?role=student`,
+      resource: `classes/${classId}/users`,
       pagination: {
         pageSize: 3,
         mode: "server",
@@ -92,9 +92,10 @@ const ClassesShow = () => {
         permanent: [
           {
             field: "role",
-            operator: "eq",
-            value: "student",
+            operator: "in",
+            value: ["student", "teacher"],
           },
+
         ],
       },
     },
