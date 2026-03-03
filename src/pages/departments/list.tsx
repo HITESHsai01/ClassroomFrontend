@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { useTable } from "@refinedev/react-table";
 
@@ -19,8 +19,27 @@ type DepartmentListItem = {
   totalSubjects?: number | null;
 };
 
+// Inline debounce hook — no extra packages needed
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setDebouncedValue(value), delay);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 const DepartmentsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Waits 400ms after the user stops typing before updating
+  const debouncedSearch = useDebounce(searchQuery, 400);
 
   const departmentColumns = useMemo<ColumnDef<DepartmentListItem>[]>(
     () => [
@@ -31,7 +50,6 @@ const DepartmentsList = () => {
         header: () => <p className="column-title ml-2">Code</p>,
         cell: ({ getValue }) => {
           const code = getValue<string>();
-
           return code ? (
             <Badge>{code}</Badge>
           ) : (
@@ -66,7 +84,6 @@ const DepartmentsList = () => {
         header: () => <p className="column-title">Description</p>,
         cell: ({ getValue }) => {
           const description = getValue<string>();
-
           return description ? (
             <span className="truncate line-clamp-2">{description}</span>
           ) : (
@@ -93,21 +110,6 @@ const DepartmentsList = () => {
     []
   );
 
-  const searchFilters = searchQuery
-    ? [
-      {
-        field: "name",
-        operator: "contains" as const,
-        value: searchQuery,
-      },
-      {
-        field: "code",
-        operator: "contains" as const,
-        value: searchQuery,
-      },
-    ]
-    : [];
-
   const departmentsTable = useTable<DepartmentListItem>({
     columns: departmentColumns,
     refineCoreProps: {
@@ -117,18 +119,39 @@ const DepartmentsList = () => {
         mode: "server",
       },
       filters: {
-        permanent: [...searchFilters],
+        // "initial" not "permanent" — avoids Refine force-reapplying
+        // filters on every render, which was causing extra requests
+        initial: [],
       },
       sorters: {
-        initial: [
-          {
-            field: "id",
-            order: "desc",
-          },
-        ],
+        initial: [{ field: "id", order: "desc" }],
       },
     },
   });
+
+  const {
+    refineCore: { setFilters },
+  } = departmentsTable;
+
+  const handleSearchChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(event.target.value);
+    },
+    []
+  );
+
+  // Push debounced value into Refine's filter state.
+  // This only fires 400ms after typing stops — kills the 429 flood.
+  useEffect(() => {
+    if (debouncedSearch) {
+      setFilters([
+        { field: "name", operator: "contains", value: debouncedSearch },
+        { field: "code", operator: "contains", value: debouncedSearch },
+      ]);
+    } else {
+      setFilters([]);
+    }
+  }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <ListView>
@@ -146,7 +169,7 @@ const DepartmentsList = () => {
               placeholder="Search by name or code..."
               className="pl-10 w-full"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
           <CreateButton resource="departments" />
