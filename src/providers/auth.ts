@@ -87,13 +87,19 @@ export const authProvider: AuthProvider = {
     }
   },
   logout: async () => {
-    try {
-      await authClient.signOut();
-    } catch (e) {
-      console.warn("Server signout failed, clearing local state anyway.");
+    const { error } = await authClient.signOut();
+
+    if (error) {
+      console.error("Logout error:", error);
+      return {
+        success: false,
+        error: {
+          name: "Logout failed",
+          message: "Unable to log out. Please try again.",
+        },
+      };
     }
 
-    // Always clear local storage so the user isn't stuck
     localStorage.removeItem("user");
 
     return {
