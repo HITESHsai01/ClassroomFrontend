@@ -116,46 +116,24 @@ export const authProvider: AuthProvider = {
 
     return { error };
   },
-  // check: async () => {
-  //   const user = localStorage.getItem("user");
-  //
-  //   if (user) {
-  //     return {
-  //       authenticated: true,
-  //     };
-  //   }
-  //
-  //   return {
-  //     //authenticated: false,
-  //     //logout: true,
-  //     //redirectTo: "/login",
-  //     //error: {
-  //       //name: "Unauthorized",
-  //       //message: "Check failed",
-  //     },
-  //   };
-  // },
-
   check: async () => {
-    try {
-      // Ask backend: "who am I?"
-      const { data, error } = await authClient.getSession(); // or /me endpoint
+    const user = localStorage.getItem("user");
 
-      if (error || !data?.user) throw new Error();
-
-      // Cache for UI only (NOT for auth decision)
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      return { authenticated: true };
-    } catch {
-      localStorage.removeItem("user");
-
+    if (user) {
       return {
-        authenticated: false,
-        logout: true,
-        redirectTo: "/login",
+        authenticated: true,
       };
     }
+
+    return {
+      authenticated: false,
+      logout: true,
+      redirectTo: "/login",
+      error: {
+        name: "Unauthorized",
+        message: "Check failed",
+      },
+    };
   },
   getPermissions: async () => {
     const user = localStorage.getItem("user");
